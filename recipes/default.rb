@@ -16,8 +16,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# include_recipe php
-# include_recipe mysql
+# Instal PHP + Modules
+node.default['php']['version'] = '7.4'
+node.default['osl-php']['use_ius'] = true
+node.default['osl-php']['use_opcache'] = true
+node.default['osl-php']['php_packages'] = %w(fpm cli imap json mysqlnd mbstring) 
+
+include_recipe 'osl-php'
+include_recipe 'osl-apache'
+include_recipe 'osl-apache::mod_php'
+#include_recipe 'osl-mysql::client'                Yum package[mariadb, mariadb-devel] failed?
 
 # Following this tutorial: https://linuxize.com/post/set-up-an-email-server-with-postfixadmin/
 
@@ -34,35 +42,34 @@ user 'vmail' do
 end
 
 # For testing
-
 user 'www-data' do
   comment 'Php user'
   uid     5001
   gid     5000
 end
 
-directory '/var/www'
+# Download Postfixadmin
+postfixadmin_download_location = "#{Chef::Config[:file_cache_path]}/postfixadmin.tar.gz"
 
-remote_file '/var/www/postfixadmin.tar.gz' do
-  source "https://downloads.sourceforge.net/project/postfixadmin/postfixadmin/postfixadmin-#{node['postfixadmin']['version']}/postfixadmin-#{node['postfixadmin']['version']}.tar.gz"
-  mode '0755'
+remote_file postfixadmin_download_location  do
+  source   postfixadmin_source
+  checksum postfixadmin_checksum
+  notifies :extract, "archive_file[#{postfixadmin_download_location}]", :immediately
 end
 
-archive_file '/var/www/postfixadmin.tar.gz' do
-  destination '/var/www/tmp'
+# Extract Postfixadmin
+archive_file postfixadmin_download_location do
+  destination '/var/www/postfixadmin'
+  strip_components 1
   owner 'www-data'
-  not_if { ::File.exist?('/var/www/postfixadmin') }
+  action :nothing
 end
 
-bash "Move and rename postfixadmin" do
-  code <<-EOL
-  mv /var/www/tmp/postfixadmin-#{node['postfixadmin']['version']} /var/www/postfixadmin
-  EOL
-  not_if { ::File.exist?('/var/www/postfixadmin') }
-end
-  
+# Local Postfix config
 template "/var/www/postfixadmin/config.local.php" do
   source 'config.local.php.erb'
+  sensitive true
 end
 
-
+# Cache Directory
+directory '/var/www/templates_c'

@@ -4,11 +4,19 @@ verifier:
 
 provisioner:
   name: chef_zero
+  data_bags_path: test/integration/data_bags
   enforce_idempotency: true
   multiple_converge: 2
-  deprecations_as_errors: true
+  #deprecations_as_errors: true "The  resource in the iptables-ng cookbook should declare `unified_mode true`"
+  deprecations_as_errors: false
 
 suites:
   - name: default
     run_list:
+      - recipe[mailstore-test::default]
       - recipe[osl-mailstore::default]
+    driver:
+      flavor_ref: 'm1.medium'
+      attributes:
+        osl-mysql:
+          enable_percona_client: true

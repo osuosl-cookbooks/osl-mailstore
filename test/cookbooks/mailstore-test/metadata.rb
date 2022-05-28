@@ -1,0 +1,7 @@
+name             'mailstore-test'
+maintainer       'Oregon State University Open Source Lab'
+maintainer_email 'chef@osuosl.org'
+license          'Apache-2.0'
+description      'Generic osl-mailstore testing cookbook'
+version          '0.0.1'
+depends          'osl-mysql'
