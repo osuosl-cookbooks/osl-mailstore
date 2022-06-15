@@ -25,7 +25,7 @@ node.default['osl-php']['php_packages'] = %w(fpm cli imap json mysqlnd mbstring)
 include_recipe 'osl-php'
 include_recipe 'osl-apache'
 include_recipe 'osl-apache::mod_php'
-#include_recipe 'osl-mysql::client'                Yum package[mariadb, mariadb-devel] failed?
+include_recipe 'osl-mysql::client'
 
 # Following this tutorial: https://linuxize.com/post/set-up-an-email-server-with-postfixadmin/
 
