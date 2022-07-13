@@ -73,3 +73,25 @@ end
 
 # Cache Directory
 directory '/var/www/templates_c'
+
+# Create the database
+percona_mysql_database 'postfixadmin' do
+  # from config file, how could I grab them as variables?
+  user 'postfixadmin' 
+  host 'localhost'
+  action :create
+end
+
+# Grant privileges
+percona_mysql_user 'postfixadmin' do
+  password 'password'
+  database_name 'postfixadmin'
+  host 'localhost'
+  privileges [:all]
+  action :grant
+end
+
+percona_mysql_database 'flush privileges' do
+  sql 'FLUSH PRIVILEGES'
+  action :query
+end

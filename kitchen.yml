@@ -16,6 +16,6 @@ suites:
       - recipe[osl-mailstore::default]
     driver:
       flavor_ref: 'm1.medium'
-      attributes:
-        osl-mysql:
-          enable_percona_client: true
+    attributes:
+      osl-mysql:
+        enable_percona_client: true
