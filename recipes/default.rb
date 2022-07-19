@@ -20,7 +20,7 @@
 node.default['php']['version'] = '7.4'
 node.default['osl-php']['use_ius'] = true
 node.default['osl-php']['use_opcache'] = true
-node.default['osl-php']['php_packages'] = %w(fpm cli imap json mysqlnd mbstring) 
+node.default['osl-php']['php_packages'] = %w(fpm cli imap json mysqlnd mbstring)
 
 include_recipe 'osl-php'
 include_recipe 'osl-apache'
@@ -31,7 +31,7 @@ include_recipe 'osl-mysql::client'
 
 group 'vmail' do
   gid 5000
-end  
+end
 
 user 'vmail' do
   comment 'Owner of all mailboxes. Used to access emails on this server'
@@ -51,7 +51,7 @@ end
 # Download Postfixadmin
 postfixadmin_download_location = "#{Chef::Config[:file_cache_path]}/postfixadmin.tar.gz"
 
-remote_file postfixadmin_download_location  do
+remote_file postfixadmin_download_location do
   source   postfixadmin_source
   checksum postfixadmin_checksum
   notifies :extract, "archive_file[#{postfixadmin_download_location}]", :immediately
@@ -66,7 +66,7 @@ archive_file postfixadmin_download_location do
 end
 
 # Local Postfix config
-template "/var/www/postfixadmin/config.local.php" do
+template '/var/www/postfixadmin/config.local.php' do
   source 'config.local.php.erb'
   sensitive true
 end
@@ -74,24 +74,7 @@ end
 # Cache Directory
 directory '/var/www/templates_c'
 
-# Create the database
-percona_mysql_database 'postfixadmin' do
-  # from config file, how could I grab them as variables?
-  user 'postfixadmin' 
-  host 'localhost'
-  action :create
-end
-
-# Grant privileges
-percona_mysql_user 'postfixadmin' do
-  password 'password'
-  database_name 'postfixadmin'
-  host 'localhost'
-  privileges [:all]
-  action :grant
-end
-
-percona_mysql_database 'flush privileges' do
-  sql 'FLUSH PRIVILEGES'
-  action :query
+execute 'create schema for postfix admin db' do
+  command 'php /var/www/postfixadmin/upgrade.php'
+  user 'www-data'
 end
