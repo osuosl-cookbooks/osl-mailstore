@@ -74,7 +74,42 @@ end
 # Cache Directory
 directory '/var/www/templates_c'
 
-execute 'create schema for postfix admin db' do
-  command 'php /var/www/postfixadmin/upgrade.php'
-  user 'www-data'
-end
+# Dovecot
+node.default['dovecot']['conf']['mail_location'] = 'maildir:/var/mail/vmail/%u/'
+node.default['dovecot']['conf']['mail_uid'] = 'vmail'
+node.default['dovecot']['conf']['mail_gid'] = 'vmail'
+
+node.default['dovecot']['namespaces'] = [
+  {
+    'name' => 'inbox',
+    'inbox' => true,
+    'mailboxes' => {
+      'Drafts' => {
+        'special_use' => '\Drafts',
+      },
+      'Junk' => {
+        'special_use' => '\Junk',
+      },
+      'Sent' => {
+        'special_use' => '\Sent',
+      },
+      'Sent Messages' => {
+        'special_use' => '\Sent',
+      },
+      'Trash' => {
+        'special_use' => '\Trash',
+      },
+    },
+  },
+]
+
+node.default['dovecot']['conf']['ssl'] = 'required'
+node.default['dovecot']['conf']['ssl_cert'] = '</etc/dovecot/private/dovecot.pem'
+node.default['dovecot']['conf']['ssl_key'] = '</etc/dovecot/private/dovecot.pem'
+
+node.default['dovecot']['conf']['auth_mechanisms'] = 'plain login'
+node.default['dovecot']['auth']['sql']['userdb']['args'] = '/etc/dovecot/dovecot-sql.conf'
+node.default['dovecot']['auth']['sql']['passdb']['args'] = '/etc/dovecot/dovecot-sql.conf'
+
+node.force_default['dovecot']['conf']['sql']['default_pass_scheme'] = 'PLAIN-MD5'
+node.force_default['dovecot']['conf']['sql']['password_query'] = "SELECT username AS user,password FROM mailbox WHERE username='%u' AND active='1'"
