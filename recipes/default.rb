@@ -51,18 +51,13 @@ end
 # Download Postfixadmin
 postfixadmin_download_location = "#{Chef::Config[:file_cache_path]}/postfixadmin.tar.gz"
 
-remote_file postfixadmin_download_location do
-  source   postfixadmin_source
+ark 'postfixadmin' do
+  url postfixadmin_source
+  path '/var/www/postfixadmin'
   checksum postfixadmin_checksum
-  notifies :extract, "archive_file[#{postfixadmin_download_location}]", :immediately
-end
-
-# Extract Postfixadmin
-archive_file postfixadmin_download_location do
-  destination '/var/www/postfixadmin'
-  strip_components 1
   owner 'www-data'
-  action :nothing
+  strip_components 1
+  action :cherry_pick
 end
 
 # Local Postfix config
@@ -73,6 +68,24 @@ end
 
 # Cache Directory
 directory '/var/www/templates_c'
+
+# Postfix
+node.default['osl-postfix']['main'].tap do |main|
+  main['relay_domains'] = 'proxy:mysql:/etc/postfix/sql/mysql_relay_domains.cf'
+  main['transport_maps'] = 'proxy:mysql:/etc/postfix/sql/mysql_transport_maps.cf'
+  main['virtual_mailbox_domains'] = 'proxy:mysql:/etc/postfix/sql/mysql_virtual_domains_map.cf'
+  main['virtual_alias_maps'] = %w(
+    mysql_virtual_alias_maps.cf
+    mysql_virtual_alias_domain_maps.cf
+    mysql_virtual_alias_domain_catchall_maps.cf
+  ).map { |file| 'proxy:mysql:/etc/postfix/sql/' + file }.join(',')
+  main['virtual_mailbox_maps'] = %w(
+    mysql_virtual_mailbox_maps.cf
+    mysql_virtual_alias_domain_mailbox_maps.cf
+  ).map { |file| 'proxy:mysql:/etc/postfix/sql/' + file }.join(',')
+end
+
+include_recipe 'osl-postfix'
 
 # Dovecot
 node.default['dovecot']['conf']['mail_location'] = 'maildir:/var/mail/vmail/%u/'
