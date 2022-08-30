@@ -9,7 +9,6 @@ end
 
 describe user('vmail') do
   its('home') { should eq '/var/mail/vmail' }
-  its('uid') { should eq 5000 }
   its('group') { should eq 'vmail' }
   its('shell') { should eq '/usr/sbin/nologin' }
 end
@@ -18,8 +17,16 @@ describe file('/var/www/postfixadmin') do
   it { should exist }
 end
 
-describe file('/var/www/postfixadmin/config.local.php') do
-  it { should exist }
+describe parse_config_file('/var/www/postfixadmin/config.local.php') do
+  its('$CONF[\'database_type\']') { should include 'mysqli' }
+  its('$CONF[\'database_host\']') { should include 'localhost' }
+  its('$CONF[\'database_user\']') { should include 'postfixadmin' }
+  its('$CONF[\'database_password\']') { should include 'password' }
+  its('$CONF[\'database_name\']') { should include 'postfixadmin' }
+end
+
+describe file('/var/www/templates_c') do
+  its('owner') { should eq 'www-data' }
 end
 
 %w(postfix dovecot).each do |pkg|
@@ -44,28 +51,6 @@ describe parse_config_file('/etc/dovecot/conf.d/10-mail.conf') do
   its('mail_location') { should cmp 'maildir:/var/mail/vmail/%u/' }
   its('mail_uid') { should cmp 'vmail' }
   its('mail_gid') { should cmp 'vmail' }
-  # its('content') do
-  #   should match %r{
-  #     namespace inbox {
-  #       inbox = yes
-  #       mailbox Drafts {
-  #         special_use = \Drafts
-  #       }
-  #       mailbox Junk {
-  #         special_use = \Junk
-  #       }
-  #       mailbox Sent {
-  #         special_use = \Sent
-  #       }
-  #       mailbox "Sent Messages" {
-  #         special_use = \Sent
-  #       }
-  #       mailbox Trash {
-  #         special_use = \Trash
-  #       }
-  #     }
-  #   }
-  # end
 end
 
 describe parse_config_file('/etc/dovecot/conf.d/10-ssl.conf') do

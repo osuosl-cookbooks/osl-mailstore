@@ -3,23 +3,18 @@ node.default['percona']['backup']['password'] = 'insecure'
 
 include_recipe 'osl-mysql::server'
 
-mail_secrets = data_bag_item('mailstore', 'secrets')
+mail_secrets = data_bag_item('mailstore', 'config_mysql')
 
-db = mail_secrets['postfixadmin']
-
-puts db
-puts db['db_user']
-
-percona_mysql_user db['db_user'] do
+percona_mysql_user mail_secrets['user'] do
   host 'localhost'
-  password db['db_password']
+  password mail_secrets['password']
   ctrl_password 'password'
-  database_name db['db_name']
+  database_name mail_secrets['name']
   privileges [:all]
   table '*'
   action [:create, :grant]
 end
 
-percona_mysql_database db['db_name'] do
+percona_mysql_database mail_secrets['name'] do
   password 'password'
 end

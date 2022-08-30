@@ -16,11 +16,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
-# Instal PHP + Modules
+# Install PHP + Modules
 node.default['php']['version'] = '7.4'
 node.default['osl-php']['use_ius'] = true
 node.default['osl-php']['use_opcache'] = true
-node.default['osl-php']['php_packages'] = %w(fpm cli imap json mysqlnd mbstring)
+node.default['osl-php']['php_packages'] =
+  %w(
+    fpm
+    cli
+    imap
+    json
+    mysqlnd
+    mbstring
+  )
 
 include_recipe 'osl-php'
 include_recipe 'osl-apache'
@@ -36,20 +44,12 @@ end
 user 'vmail' do
   comment 'Owner of all mailboxes. Used to access emails on this server'
   home    '/var/mail/vmail'
-  uid     5000
-  gid     5000
+  group   'vmail'
   shell   '/usr/sbin/nologin'
 end
 
-# For testing
-user 'www-data' do
-  comment 'Php user'
-  uid     5001
-  gid     5000
-end
-
 # Download Postfixadmin
-postfixadmin_download_location = "#{Chef::Config[:file_cache_path]}/postfixadmin.tar.gz"
+# postfixadmin_download_location = "#{Chef::Config[:file_cache_path]}/postfixadmin.tar.gz"
 
 ark 'postfixadmin' do
   url postfixadmin_source
@@ -64,10 +64,15 @@ end
 template '/var/www/postfixadmin/config.local.php' do
   source 'config.local.php.erb'
   sensitive true
+  variables(
+    db: data_bag_item('mailstore', 'config_mysql')
+  )
 end
 
 # Cache Directory
-directory '/var/www/templates_c'
+directory '/var/www/templates_c' do
+  owner 'www-data'
+end
 
 # Postfix
 node.default['osl-postfix']['main'].tap do |main|

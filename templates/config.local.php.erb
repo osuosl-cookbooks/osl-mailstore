@@ -1,17 +1,17 @@
 <?php
 $CONF['configured'] = true;
 
-$CONF['database_type'] = 'mysqli';
-$CONF['database_host'] = 'localhost';
-$CONF['database_user'] = 'postfixadmin';
-$CONF['database_password'] = 'password';
-$CONF['database_name'] = 'postfixadmin';
+$CONF['database_type'] = '<%= @db['type'] %>';
+$CONF['database_host'] = '<%= @db['host'] %>';
+$CONF['database_user'] = '<%= @db['user'] %>';
+$CONF['database_password'] = '<%= @db['password'] %>';
+$CONF['database_name'] = '<%= @db['name'] %>';
 
 $CONF['default_aliases'] = array (
-  'abuse'      => 'abuse@linuxize.com',
-  'hostmaster' => 'hostmaster@linuxize.com',
-  'postmaster' => 'postmaster@linuxize.com',
-  'webmaster'  => 'webmaster@linuxize.com'
+  'abuse'      => 'abuse@osuosl.org',
+  'hostmaster' => 'hostmaster@osuosl.org',
+  'postmaster' => 'postmaster@osuosl.org',
+  'webmaster'  => 'webmaster@osuosl.org'
 );
 
 $CONF['fetchmail'] = 'NO';
