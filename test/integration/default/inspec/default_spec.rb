@@ -29,7 +29,7 @@ describe file('/var/www/templates_c') do
   its('owner') { should eq 'www-data' }
 end
 
-%w(postfix dovecot).each do |pkg|
+%w(postfix dovecot dovecot-mysql).each do |pkg|
   describe package(pkg) do
     it { should be_installed }
   end

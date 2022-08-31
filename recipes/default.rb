@@ -55,7 +55,7 @@ ark 'postfixadmin' do
   url postfixadmin_source
   path '/var/www/postfixadmin'
   checksum postfixadmin_checksum
-  owner 'www-data'
+  owner 'root'
   strip_components 1
   action :cherry_pick
 end
@@ -71,7 +71,7 @@ end
 
 # Cache Directory
 directory '/var/www/templates_c' do
-  owner 'www-data'
+  owner 'root'
 end
 
 # Postfix
@@ -129,5 +129,11 @@ node.default['dovecot']['conf']['auth_mechanisms'] = 'plain login'
 node.default['dovecot']['auth']['sql']['userdb']['args'] = '/etc/dovecot/dovecot-sql.conf'
 node.default['dovecot']['auth']['sql']['passdb']['args'] = '/etc/dovecot/dovecot-sql.conf'
 
+node.default['osl-imap']['auth_sql']['data_bag'] = 'sql_creds'
+node.default['osl-imap']['auth_sql']['data_bag_item'] = 'mysql'
+node.default['osl-imap']['auth_sql']['enable_passdb'] = true
+
 node.force_default['dovecot']['conf']['sql']['default_pass_scheme'] = 'PLAIN-MD5'
-node.force_default['dovecot']['conf']['sql']['password_query'] = "SELECT username AS user,password FROM mailbox WHERE username='%u' AND active='1'"
+node.force_default['dovecot']['conf']['sql']['password_query'] = "SELECT u.email as user, u.password FROM view_users u LEFT JOIN plain_users p ON (u.email = p.email) WHERE u.email = '%u' OR p.plain_user = '%u'"
+
+include_recipe 'osl-imap'
