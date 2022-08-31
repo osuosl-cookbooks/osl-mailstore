@@ -1,0 +1,8 @@
+{
+    "id": "mysql",
+    "host": "localhost",
+    "db": "postfixadmin",
+    "user": "postfixadmin",
+    "pass": "password",
+    "type": "mysql"
+}
