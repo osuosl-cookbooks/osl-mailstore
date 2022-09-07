@@ -9,7 +9,7 @@ percona_mysql_user mail_secrets['user'] do
   host 'localhost'
   password mail_secrets['password']
   ctrl_password 'password'
-  database_name mail_secrets['name']
+  database_name mail_secrets['db']
   privileges [:all]
   table '*'
   action [:create, :grant]

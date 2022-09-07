@@ -26,7 +26,7 @@ describe parse_config_file('/var/www/postfixadmin/config.local.php') do
 end
 
 describe file('/var/www/templates_c') do
-  its('owner') { should eq 'www-data' }
+  its('owner') { should eq 'apache' }
 end
 
 %w(postfix dovecot dovecot-mysql).each do |pkg|
@@ -40,17 +40,37 @@ describe file('/etc/postfix/main.cf') do
 end
 
 describe postfix_conf do
-  its('relay_domains') { should eq 'proxy:mysql:/etc/postfix/sql/mysql_relay_domains.cf' }
-  its('transport_maps') { should eq 'proxy:mysql:/etc/postfix/sql/mysql_transport_maps.cf' }
-  its('virtual_mailbox_domains') { should eq 'proxy:mysql:/etc/postfix/sql/mysql_virtual_domains_map.cf' }
-  its('virtual_alias_maps') { should eq 'proxy:mysql:/etc/postfix/sql/mysql_virtual_alias_maps.cf,proxy:mysql:/etc/postfix/sql/mysql_virtual_alias_domain_maps.cf,proxy:mysql:/etc/postfix/sql/mysql_virtual_alias_domain_catchall_maps.cf' }
-  its('virtual_mailbox_maps') { should eq 'proxy:mysql:/etc/postfix/sql/mysql_virtual_mailbox_maps.cf,proxy:mysql:/etc/postfix/sql/mysql_virtual_alias_domain_mailbox_maps.cf' }
+  its('virtual_mailbox_domains') { should eq 'proxy:mysql:/etc/postfix/sql/mysql_virtual_domains_maps.cf' }
+  its('virtual_alias_maps') { should eq 'proxy:mysql:/etc/postfix/sql/mysql-virtual-alias-maps.cf,proxy:mysql:/etc/postfix/sql/mysql-virtual-alias-domain-maps.cf,proxy:mysql:/etc/postfix/sql/mysql-virtual-alias-domain-catchall-maps.cf' }
+  its('virtual_mailbox_maps') { should eq 'proxy:mysql:/etc/postfix/sql/mysql-virtual-mailbox-maps.cf,proxy:mysql:/etc/postfix/sql/mysql-virtual-alias-domain-mailbox-maps.cf' }
+  its('relay_domains') { should eq 'proxy:mysql:/etc/postfix/sql/mysql-relay-domains.cf' }
+  its('transport_maps') { should eq 'proxy:mysql:/etc/postfix/sql/mysql-transport-maps.cf' }
+  its('virtual_mailbox_base') { should eq '/var/mail/vmail' }
+end
+
+{
+  'virtual-alias-maps' => "SELECT goto FROM alias WHERE address='%s' AND active'1'",
+  'virtual-alias-domain_maps' => "SELECT goto FROM alias,alias_domain WHERE alias_domain.alias_domain='%d' and alias.address=CONCAT('%u', '@', alias_domain.target_domain AND alias.active=1 AND alias_domain.active='1'",
+  'virtual-alias-domain-catchall_maps' => "SELECT goto FROM alias,alias_domain WHERE alias_domain.alias_domain = '%d' and alias.address = CONCAT('@', alias_domain.target_domain) AND alias.active = 1 AND alias_domain.active='1'",
+  'virtual-domains-maps' => "SELECT domain FROM domain WHERE domain='%s' AND active = '1'",
+  'virtual-mailbox-maps' => "SELECT maildir FROM mailbox WHERE username='%s' AND active='1'",
+  'virtual-alias-domain-mailbox-maps' => "SELECT maildir FROM mailbox,alias_domain WHERE alias_domain.alias_domain = '%d' and mailbox.username = CONCAT('%u', '@', alias_domain.target_domain) AND mailbox.active = 1 AND alias_domain.active='1'",
+  'relay-domains' => "SELECT domain FROM domain WHERE domain='%s' AND active = '1' AND (transport LIKE 'smtp%%' OR transport LIKE 'relay%%')",
+  'transport-maps' => "SELECT REPLACE(transport, 'virtual', ':') AS transport FROM domain WHERE domain='%s' AND active = '1'",
+  'virtual-mailbox-limit-maps' => "SELECT quota FROM mailbox WHERE username='%s' AND active='1'",
+
+}.each do |file, query|
+  describe postfix_conf("/etc/postfix/mysql-#{file}.cf") do
+    its('user') { should eq 'postfixadmin' }
+    its('password') { should eq 'password' }
+    its('hosts') { should eq 'localhost' }
+    its('dbname') { should eq 'postfixadmin' }
+    its('query') { should match(query) }
+  end
 end
 
 describe parse_config_file('/etc/dovecot/conf.d/10-mail.conf') do
   its('mail_location') { should cmp 'maildir:/var/mail/vmail/%u/' }
-  its('mail_uid') { should cmp 'vmail' }
-  its('mail_gid') { should cmp 'vmail' }
 end
 
 describe parse_config_file('/etc/dovecot/conf.d/10-ssl.conf') do
@@ -59,8 +79,14 @@ describe parse_config_file('/etc/dovecot/conf.d/10-ssl.conf') do
   its('ssl_key') { should cmp '</etc/pki/tls/private/wildcard.key' }
 end
 
-describe parse_config_file('/etc/dovecot/dovecot-sql.conf.ext') do
+describe parse_config_file('/etc/dovecot/conf.d/10-auth.conf') do
+  its('auth_mechanisms') { should cmp 'plain login' }
+end
+
+describe parse_config_file('/etc/dovecot/conf.d/dovecot-sql.conf') do
   its('driver') { should cmp 'mysql' }
-  its('default_pass_scheme') { should cmp 'PLAIN-MD5' }
-  its('password-query') { should cmp 'SELECT username AS user,password FROM mailbox WHERE username=\'%u\' AND active=\'1\'' }
+  its('default_pass_scheme') { should cmp 'MD5-CRYPT' }
+  its('password_query') { should cmp "SELECT username AS user,password FROM mailbox WHERE username = '%u' AND active='1'" }
+  its('user_query') { should cmp "SELECT CONCAT('/var/mail/vmail/', maildir) AS home, 1001 AS uid, 1001 AS gid, CONCAT('*:bytes=', quota) AS quota_rule FROM mailbox WHERE username = '%u' AND active='1'" }
+  its('iterate_query') { should cmp "SELECT username as user FROM mailbox WHERE active = '1'" }
 end
