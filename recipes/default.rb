@@ -154,15 +154,15 @@ node.default['dovecot']['conf']['auth_mechanisms'] = 'plain login'
 # node.default['dovecot']['first_valid_uid'] = '5000'
 node.default['dovecot']['disable_plaintext_auth'] = 'no'
 
-node.default['dovecot']['conf']['sql']['default_pass_scheme'] = 'MD5-CRYPT'
-node.default['dovecot']['conf']['sql']['password_query'] = "SELECT username AS user,password FROM mailbox WHERE username = '%u' AND active='1'"
-node.default['dovecot']['conf']['sql']['user_query'] = "SELECT CONCAT('/var/mail/vmail/', maildir) AS home, 1001 AS uid, 1001 AS gid, CONCAT('*:bytes=', quota) AS quota_rule FROM mailbox WHERE username = '%u' AND active='1'"
-node.default['dovecot']['conf']['sql']['iterate_query'] = "SELECT username as user FROM mailbox WHERE active = '1'"
-
 node.default['dovecot']['auth']['sql']['userdb']['args'] = '/etc/dovecot/dovecot-sql.conf'
 node.default['dovecot']['auth']['sql']['passdb']['args'] = '/etc/dovecot/dovecot-sql.conf'
 node.default['osl-imap']['auth_sql']['data_bag'] = 'sql_creds'
 node.default['osl-imap']['auth_sql']['data_bag_item'] = 'mysql'
 node.default['osl-imap']['auth_sql']['enable_passdb'] = true
+
+node.force_default['dovecot']['conf']['sql']['default_pass_scheme'] = 'PLAIN-MD5'
+node.default['dovecot']['conf']['sql']['password_query'] = "SELECT username AS user,password FROM mailbox WHERE username = '%u' AND active='1'"
+node.default['dovecot']['conf']['sql']['user_query'] = "SELECT CONCAT('/var/mail/vmail/', maildir) AS home, 1001 AS uid, 1001 AS gid, CONCAT('*:bytes=', quota) AS quota_rule FROM mailbox WHERE username = '%u' AND active='1'"
+node.default['dovecot']['conf']['sql']['iterate_query'] = "SELECT username as user FROM mailbox WHERE active = '1'"
 
 include_recipe 'osl-imap'

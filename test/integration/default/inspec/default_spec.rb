@@ -83,9 +83,9 @@ describe parse_config_file('/etc/dovecot/conf.d/10-auth.conf') do
   its('auth_mechanisms') { should cmp 'plain login' }
 end
 
-describe parse_config_file('/etc/dovecot/conf.d/dovecot-sql.conf') do
+describe parse_config_file('/etc/dovecot/dovecot-sql.conf.ext') do
   its('driver') { should cmp 'mysql' }
-  its('default_pass_scheme') { should cmp 'MD5-CRYPT' }
+  its('default_pass_scheme') { should cmp 'PLAIN-MD5' }
   its('password_query') { should cmp "SELECT username AS user,password FROM mailbox WHERE username = '%u' AND active='1'" }
   its('user_query') { should cmp "SELECT CONCAT('/var/mail/vmail/', maildir) AS home, 1001 AS uid, 1001 AS gid, CONCAT('*:bytes=', quota) AS quota_rule FROM mailbox WHERE username = '%u' AND active='1'" }
   its('iterate_query') { should cmp "SELECT username as user FROM mailbox WHERE active = '1'" }
