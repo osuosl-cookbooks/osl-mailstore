@@ -24,6 +24,25 @@ describe 'osl-mailstore::default' do
       cached(:chef_run) do
         ChefSpec::SoloRunner.new(p).converge(described_recipe)
       end
+      before do
+	stub_command('/usr/bin/test /etc/alternatives/mta -ef /usr/sbin/sendmail.postfix').and_return(0)
+ 	stub_data_bag_item('mailstore', 'config_mysql').and_return(
+	  id: 'config_mysql',
+	  type: 'mysqli',
+	  host: 'localhost',
+	  user: 'postfixadmin',
+	  password: 'password',
+	  name: 'postfixadmin'
+	)
+	stub_data_bag_item('sql_creds', 'mysql').and_return(
+	  id: 'mysql',
+	  host: 'localhost',
+	  db: 'postfixadmin',
+	  user: 'postfixadmin',
+	  pass: 'password',
+	  type: 'mysql'
+	)
+      end
       it 'converges successfully' do
         expect { chef_run }.to_not raise_error
       end
