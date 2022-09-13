@@ -90,7 +90,7 @@ file wildcard_file_path => [
   'test/integration/data_bags/certificates',
   'test/integration/encrypted_data_bag_secret',
 ] do
-  data_bag = Chef::EncryptedDataBagItem.load_secret(
+  encrypted_data_bag_secret = Chef::EncryptedDataBagItem.load_secret(
     encrypted_data_bag_secret_path
   )
 
