@@ -39,10 +39,8 @@ include_recipe 'osl-mysql::client'
 cert_path = '/etc/pki/tls/certs/wildcard.pem'
 key_path = '/etc/pki/tls/certs/wildcard.key'
 
-# Following this tutorial: https://linuxize.com/post/set-up-an-email-server-with-postfixadmin/
-
 group 'vmail' do
-  gid 5000
+  system  true
 end
 
 user 'vmail' do
@@ -50,10 +48,8 @@ user 'vmail' do
   home    '/var/mail/vmail'
   group   'vmail'
   shell   '/usr/sbin/nologin'
+  system  true
 end
-
-# Download Postfixadmin
-# postfixadmin_download_location = "#{Chef::Config[:file_cache_path]}/postfixadmin.tar.gz"
 
 ark 'postfixadmin' do
   url postfixadmin_source
@@ -69,12 +65,12 @@ template '/var/www/postfixadmin/config.local.php' do
   source 'config.local.php.erb'
   sensitive true
   variables(
-    db: data_bag_item('mailstore', 'config_mysql')
+    db: data_bag_item('mailstore', 'sql_creds')
   )
 end
 
 # Cache Directory
-directory '/var/www/templates_c' do
+directory '/var/www/postfixadmin/templates_c' do
   owner 'apache'
 end
 
@@ -100,18 +96,9 @@ include_recipe 'osl-postfix'
 directory '/etc/postfix/sql'
 
 # Postfix - MySQL configs
-creds = data_bag_item('sql_creds', 'mysql')
-{
-  'virtual-alias-maps' => "SELECT goto FROM alias WHERE address='%s' AND active'1'",
-  'virtual-alias-domain_maps' => "SELECT goto FROM alias,alias_domain WHERE alias_domain.alias_domain='%d' and alias.address=CONCAT('%u', '@', alias_domain.target_domain AND alias.active=1 AND alias_domain.active='1'",
-  'virtual-alias-domain-catchall_maps' => "SELECT goto FROM alias,alias_domain WHERE alias_domain.alias_domain = '%d' and alias.address = CONCAT('@', alias_domain.target_domain) AND alias.active = 1 AND alias_domain.active='1'",
-  'virtual-domains-maps' => "SELECT domain FROM domain WHERE domain='%s' AND active = '1'",
-  'virtual-mailbox-maps' => "SELECT maildir FROM mailbox WHERE username='%s' AND active='1'",
-  'virtual-alias-domain-mailbox-maps' => "SELECT maildir FROM mailbox,alias_domain WHERE alias_domain.alias_domain = '%d' and mailbox.username = CONCAT('%u', '@', alias_domain.target_domain) AND mailbox.active = 1 AND alias_domain.active='1'",
-  'relay-domains' => "SELECT domain FROM domain WHERE domain='%s' AND active = '1' AND (transport LIKE 'smtp%%' OR transport LIKE 'relay%%')",
-  'transport-maps' => "SELECT REPLACE(transport, 'virtual', ':') AS transport FROM domain WHERE domain='%s' AND active = '1'",
-  'virtual-mailbox-limit-maps' => "SELECT quota FROM mailbox WHERE username='%s' AND active='1'",
-}.each do |file, query|
+creds = data_bag_item('mailstore', 'sql_creds')
+
+postfix_queries.each do |file, query|
   template "#{node['postfix']['conf_dir']}/mysql-#{file}.cf" do
     owner 'root'
     mode '0640'
@@ -151,18 +138,17 @@ node.default['dovecot']['conf']['ssl'] = 'required'
 node.default['dovecot']['conf']['ssl_cert'] = '<' + cert_path
 node.default['dovecot']['conf']['ssl_key'] = '<' + key_path
 node.default['dovecot']['conf']['auth_mechanisms'] = 'plain login'
-# node.default['dovecot']['first_valid_uid'] = '5000'
 node.default['dovecot']['disable_plaintext_auth'] = 'no'
 
 node.default['dovecot']['auth']['sql']['userdb']['args'] = '/etc/dovecot/dovecot-sql.conf'
 node.default['dovecot']['auth']['sql']['passdb']['args'] = '/etc/dovecot/dovecot-sql.conf'
-node.default['osl-imap']['auth_sql']['data_bag'] = 'sql_creds'
-node.default['osl-imap']['auth_sql']['data_bag_item'] = 'mysql'
+node.default['osl-imap']['auth_sql']['data_bag'] = 'mailstore'
+node.default['osl-imap']['auth_sql']['data_bag_item'] = 'sql_creds'
 node.default['osl-imap']['auth_sql']['enable_passdb'] = true
 
 node.force_default['dovecot']['conf']['sql']['default_pass_scheme'] = 'PLAIN-MD5'
-node.default['dovecot']['conf']['sql']['password_query'] = "SELECT username AS user,password FROM mailbox WHERE username = '%u' AND active='1'"
-node.default['dovecot']['conf']['sql']['user_query'] = "SELECT CONCAT('/var/mail/vmail/', maildir) AS home, 1001 AS uid, 1001 AS gid, CONCAT('*:bytes=', quota) AS quota_rule FROM mailbox WHERE username = '%u' AND active='1'"
-node.default['dovecot']['conf']['sql']['iterate_query'] = "SELECT username as user FROM mailbox WHERE active = '1'"
+node.default['dovecot']['conf']['sql']['password_query'] = dovecot_password_query
+node.default['dovecot']['conf']['sql']['user_query'] = dovecot_user_query
+node.default['dovecot']['conf']['sql']['iterate_query'] = dovecot_iterate_query
 
 include_recipe 'osl-imap'

@@ -1,6 +1,6 @@
 {
    "id": "config_mysql",
-   "type": "mysqli",
+   "type": "mysql",
    "host": "localhost",
    "user": "postfixadmin",
    "password": "password",

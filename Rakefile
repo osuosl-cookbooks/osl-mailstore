@@ -71,9 +71,9 @@ directory 'test/integration'
 #  'test/integration/encrypted_data_bag_secret'
 #
 file encrypted_data_bag_secret_path => 'test/integration' do
-  encrypted_data_bag_secret = OpenSSL::Random.random_bytes(512)
-  open encrypted_data_bag_secret_path, 'w' do |io|
-    io.write Base64.encode64(encrypted_data_bag_secret)
+  data_bag = OpenSSL::Random.random_bytes(512)
+  open encrypted_data_bag_secret, 'w' do |io|
+    io.write Base64.encode64(data_bag)
   end
 end
 
@@ -90,12 +90,12 @@ file wildcard_file_path => [
   'test/integration/data_bags/certificates',
   'test/integration/encrypted_data_bag_secret',
 ] do
-  encrypted_data_bag_secret = Chef::EncryptedDataBagItem.load_secret(
+  data_bag = Chef::EncryptedDataBagItem.load_secret(
     encrypted_data_bag_secret_path
   )
 
   encrypted_wildcard_cert = Chef::EncryptedDataBagItem.encrypt_data_bag_item(
-    ssl_data_bag_item, encrypted_data_bag_secret
+    ssl_data_bag_item, encrypt_data_bag_secret
   )
 
   open wildcard_file_path, 'w' do |io|

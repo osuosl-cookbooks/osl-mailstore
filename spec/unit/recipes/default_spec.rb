@@ -28,19 +28,20 @@ describe 'osl-mailstore::default' do
         stub_command('/usr/bin/test /etc/alternatives/mta -ef /usr/sbin/sendmail.postfix').and_return(0)
         stub_data_bag_item('mailstore', 'config_mysql').and_return(
          id: 'config_mysql',
-         type: 'mysqli',
+         type: 'mysql',
          host: 'localhost',
          user: 'postfixadmin',
          password: 'password',
          name: 'postfixadmin'
        )
-        stub_data_bag_item('sql_creds', 'mysql').and_return(
+        stub_data_bag_item('mailstore', 'sql_creds').and_return(
           id: 'mysql',
           host: 'localhost',
           db: 'postfixadmin',
           user: 'postfixadmin',
           pass: 'password',
-          type: 'mysql'
+          type: 'mysql',
+	  name: 'postfixadmin'
         )
       end
       it 'converges successfully' do

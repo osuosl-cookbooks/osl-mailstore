@@ -4,7 +4,7 @@
 # found at https://docs.chef.io/inspec/resources/
 
 describe group('vmail') do
-  its('gid') { should eq 5000 }
+  it { should exist }
 end
 
 describe user('vmail') do
@@ -18,14 +18,14 @@ describe file('/var/www/postfixadmin') do
 end
 
 describe parse_config_file('/var/www/postfixadmin/config.local.php') do
-  its('$CONF[\'database_type\']') { should include 'mysqli' }
+  its('$CONF[\'database_type\']') { should include 'mysql' }
   its('$CONF[\'database_host\']') { should include 'localhost' }
   its('$CONF[\'database_user\']') { should include 'postfixadmin' }
   its('$CONF[\'database_password\']') { should include 'password' }
   its('$CONF[\'database_name\']') { should include 'postfixadmin' }
 end
 
-describe file('/var/www/templates_c') do
+describe file('/var/www/postfixadmin/templates_c') do
   its('owner') { should eq 'apache' }
 end
 
@@ -57,8 +57,6 @@ end
   'virtual-alias-domain-mailbox-maps' => "SELECT maildir FROM mailbox,alias_domain WHERE alias_domain.alias_domain = '%d' and mailbox.username = CONCAT('%u', '@', alias_domain.target_domain) AND mailbox.active = 1 AND alias_domain.active='1'",
   'relay-domains' => "SELECT domain FROM domain WHERE domain='%s' AND active = '1' AND (transport LIKE 'smtp%%' OR transport LIKE 'relay%%')",
   'transport-maps' => "SELECT REPLACE(transport, 'virtual', ':') AS transport FROM domain WHERE domain='%s' AND active = '1'",
-  'virtual-mailbox-limit-maps' => "SELECT quota FROM mailbox WHERE username='%s' AND active='1'",
-
 }.each do |file, query|
   describe postfix_conf("/etc/postfix/mysql-#{file}.cf") do
     its('user') { should eq 'postfixadmin' }
@@ -86,7 +84,7 @@ end
 describe parse_config_file('/etc/dovecot/dovecot-sql.conf.ext') do
   its('driver') { should cmp 'mysql' }
   its('default_pass_scheme') { should cmp 'PLAIN-MD5' }
-  its('password_query') { should cmp "SELECT username AS user,password FROM mailbox WHERE username = '%u' AND active='1'" }
-  its('user_query') { should cmp "SELECT CONCAT('/var/mail/vmail/', maildir) AS home, 1001 AS uid, 1001 AS gid, CONCAT('*:bytes=', quota) AS quota_rule FROM mailbox WHERE username = '%u' AND active='1'" }
-  its('iterate_query') { should cmp "SELECT username as user FROM mailbox WHERE active = '1'" }
+  its('password_query') { should cmp "SELECT username AS user,password FROM mailbox WHERE username='%u' AND active='1'" }
+  its('user_query') { should cmp "SELECT CONCAT('/var/mail/vmail/', maildir) AS home, 1001 AS uid, 1001 AS gid, CONCAT('*:bytes=', quota) AS quota_rule FROM mailbox WHERE username='%u' AND active='1'" }
+  its('iterate_query') { should cmp "SELECT username as user FROM mailbox WHERE active='1'" }
 end

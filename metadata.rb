@@ -9,7 +9,7 @@ chef_version      '>= 16.0'
 version           '0.1.0'
 
 depends           'osl-apache'
-depends 'osl-imap'
+depends		  'osl-imap'
 depends           'osl-mysql'
 depends           'osl-resources'
 depends           'osl-repos'
