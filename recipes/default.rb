@@ -55,7 +55,6 @@ ark 'postfixadmin' do
   url postfixadmin_source
   path '/var/www/postfixadmin'
   checksum postfixadmin_checksum
-  owner 'apache'
   strip_components 1
   action :cherry_pick
 end
@@ -152,3 +151,23 @@ node.default['dovecot']['conf']['sql']['user_query'] = dovecot_user_query
 node.default['dovecot']['conf']['sql']['iterate_query'] = dovecot_iterate_query
 
 include_recipe 'osl-imap'
+
+apache_app 'postfixadmin' do
+  server_name 'postfixadmin'
+  directory '/var/www/postfixadmin'
+  ssl_enable true
+end
+
+directory '/var/www/postfixadmin' do
+  owner 'apache'
+  group 'apache'
+  recursive true
+end
+
+selinux_fcontext "/var/www/postfixadmin(/.*)?" do
+  secontext 'httpd_sys_content_t'
+end
+
+selinux_fcontext "/var/www/postfixadmin/templates_c(/.*)?" do
+  secontext 'httpd_sys_rw_content_t'
+end

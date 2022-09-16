@@ -88,3 +88,9 @@ describe parse_config_file('/etc/dovecot/dovecot-sql.conf.ext') do
   its('user_query') { should cmp "SELECT CONCAT('/var/mail/vmail/', maildir) AS home, 1001 AS uid, 1001 AS gid, CONCAT('*:bytes=', quota) AS quota_rule FROM mailbox WHERE username='%u' AND active='1'" }
   its('iterate_query') { should cmp "SELECT username as user FROM mailbox WHERE active='1'" }
 end
+
+describe directory('/var/www/postfixadmin') do
+  its('owner') { should eq 'apache' }
+  its('group') { should eq 'apache' }
+  its('selinux_label') { should eq 'unconfined_u:object_r:httpd_sys_content_t:s0' }
+end
