@@ -4,11 +4,20 @@ verifier:
 
 provisioner:
   name: chef_zero
-  enforce_idempotency: true
-  multiple_converge: 2
-  deprecations_as_errors: true
+  data_bags_path: test/integration/data_bags
+  encrypted_data_bag_secret_key_path: test/integration/encrypted_data_bag_secret.json
+  # enforce_idempotency: true
+  # multiple_converge: 2
+  # disabling: ohai cookbook deprecation error CHEF-33
+  # deprecations_as_errors: true
 
 suites:
   - name: default
     run_list:
+      - recipe[mailstore-test::default]
       - recipe[osl-mailstore::default]
+    driver:
+      flavor_ref: 'm1.medium'
+    attributes:
+      osl-mysql:
+        enable_percona_client: true

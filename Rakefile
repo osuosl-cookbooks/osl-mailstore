@@ -8,7 +8,7 @@ require 'chef/encrypted_data_bag_item'
 require 'json'
 require 'openssl'
 
-snakeoil_file_path = 'test/integration/data_bags/certificates/snakeoil.json'
+wildcard_file_path = 'test/integration/data_bags/certificates/wildcard.json'
 encrypted_data_bag_secret_path = 'test/integration/encrypted_data_bag_secret'
 
 ##
@@ -49,13 +49,13 @@ def gen_ssl_cert
 end
 
 ##
-# Create a data bag item (with the id of snakeoil) containing a self-signed SSL
+# Create a data bag item (with the id of wildcard) containing a self-signed SSL
 #  certificate
 #
 def ssl_data_bag_item
   cert, key = gen_ssl_cert
   Chef::DataBagItem.from_hash(
-    'id' => 'snakeoil',
+    'id' => 'wildcard',
     'cert' => cert.to_pem,
     'key' => key.to_pem
   )
@@ -71,9 +71,9 @@ directory 'test/integration'
 #  'test/integration/encrypted_data_bag_secret'
 #
 file encrypted_data_bag_secret_path => 'test/integration' do
-  encrypted_data_bag_secret = OpenSSL::Random.random_bytes(512)
-  open encrypted_data_bag_secret_path, 'w' do |io|
-    io.write Base64.encode64(encrypted_data_bag_secret)
+  data_bag = OpenSSL::Random.random_bytes(512)
+  open encrypted_data_bag_secret, 'w' do |io|
+    io.write Base64.encode64(data_bag)
   end
 end
 
@@ -83,10 +83,10 @@ end
 directory 'test/integration/data_bags/certificates' => 'test/integration'
 
 ##
-# Create the encrypted snakeoil certificate under
+# Create the encrypted wildcard certificate under
 #  test/integration/data_bags/certificates
 #
-file snakeoil_file_path => [
+file wildcard_file_path => [
   'test/integration/data_bags/certificates',
   'test/integration/encrypted_data_bag_secret',
 ] do
@@ -94,17 +94,17 @@ file snakeoil_file_path => [
     encrypted_data_bag_secret_path
   )
 
-  encrypted_snakeoil_cert = Chef::EncryptedDataBagItem.encrypt_data_bag_item(
-    ssl_data_bag_item, encrypted_data_bag_secret
+  encrypted_wildcard_cert = Chef::EncryptedDataBagItem.encrypt_data_bag_item(
+    ssl_data_bag_item, encrypt_data_bag_secret
   )
 
-  open snakeoil_file_path, 'w' do |io|
-    io.write JSON.pretty_generate(encrypted_snakeoil_cert)
+  open wildcard_file_path, 'w' do |io|
+    io.write JSON.pretty_generate(encrypted_wildcard_cert)
   end
 end
 
-desc 'Create an Encrypted Databag Snakeoil SSL Certificate'
-task snakeoil: snakeoil_file_path
+desc 'Create an Encrypted Databag Wildcard SSL Certificate'
+task wildcard: wildcard_file_path
 
 desc 'Create an Encrypted Databag Secret'
 task secret_file: encrypted_data_bag_secret_path

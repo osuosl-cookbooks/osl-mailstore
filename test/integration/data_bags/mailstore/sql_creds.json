@@ -1,0 +1,9 @@
+{
+    "id": "sql_creds",
+    "host": "localhost",
+    "db": "postfixadmin",
+    "user": "postfixadmin",
+    "pass": "password",
+    "type": "mysql",
+    "name": "postfixadmin"
+}
